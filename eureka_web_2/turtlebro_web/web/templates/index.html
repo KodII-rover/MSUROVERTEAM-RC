@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="ru" class="h-100">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+
+    <title>TurtleBro {{ros_robot}} WEB control</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="../static/css/bootstrap/bootstrap.css" rel="stylesheet">
+    <link href="../static/css/bootstrap/bootstrap-slider.min.css" rel="stylesheet">
+    <link href="../static/css/sticky-footer-navbar.css" rel="stylesheet">
+    <link href="../static/css/styles.css" rel="stylesheet">    
+
+    
+  </head>
+  <link rel="'shortcut icon" href="#">
+  <body class="d-flex flex-column h-100">
+  <header>
+  <!-- Fixed navbar -->
+  <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+    <a class="navbar-brand" href="#">EUREKA Web</a>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+          <a class="nav-link" href="index.html">Main</a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="arm.html">Arm</a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="drill.html">Drill</a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="autnav.html">Autonomous<span class="sr-only">(current)</span></a>
+        </li>
+        <li class="nav-item active">
+          <a class="nav-link" href="power.html">Power<span class="sr-only">(current)</span></a>
+        </li>
+      </ul>
+    </div> 
+  </nav>
+</header>
+
+<!-- Begin page content -->
+<main role="main" class="flex-shrink-0" style="margin-top: 3.5%;">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-lg-3">
+        <div class="stream1" style="object-fit:contain">
+          <img src="http://{{ros_host}}:9999/stream?topic=/armcam/image_raw&type=mjpeg&default_transport=compressed&quality=20" 
+          width="400" height="300" style="border:4px solid rgb(14, 229, 54); max-width:100%; height:auto"/>
+        </div>
+        <div class=" stream2" style="object-fit:contain">
+          <img src="http://{{ros_host}}:9999/stream?topic=/topdowncam/image_raw&type=mjpeg&default_transport=compressed&quality=20" 
+          width="400" height="300" style="border:4px solid rgb(14, 229, 54); max-width:100%; height:auto"/>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="stream3" style="object-fit:contain">
+          <img src="http://{{ros_host}}:9999/stream?topic=/arrow_box_full/image_raw&type=ros_compressed"
+           width="800" height="600" style="border:4px solid rgb(14, 229, 54); max-width:100%; height:auto"/>
+        </div>
+      </div>
+      <div class="col-lg-3">
+        <div class="stream1" style="position: relative; display: inline-block; object-fit: contain;">
+          <img id="cameraStream"
+              src="http://{{ros_host}}:9999/stream?topic=/ircam/image_raw&type=mjpeg&default_transport=compressed&quality=20" 
+              width="400" height="300"
+              style="border:4px solid rgb(14, 229, 54); max-width:100%; height:auto"/>
+          
+          <button id="toggleCamera" 
+                  style="position: absolute; bottom: 8px; right: 8px; padding: 5px 10px; 
+                        background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 4px;
+                        cursor: pointer; font-size: 12px;">
+            hazcam
+          </button>
+        </div>
+        <div class="stream1" style="object-fit:contain">
+          <img src="http://{{ros_host}}:9999/stream?topic=/pancam/image_raw&type=mjpeg&default_transport=compressed&quality=40" 
+          width="400" height="300" style="border:4px solid rgb(14, 229, 54); max-width:100%; height:auto"/>
+        </div>
+      </div>     
+    </div>
+    <div class="row">
+        <div class="col-lg-2" style="line-height: 1;">
+          <h4>Drivetrain</h4>
+          <p>Linear:  
+            <input
+            id="linear_slider"
+            type="text"
+            data-provide="slider"
+            data-slider-min="10"
+            data-slider-max="100"
+            data-slider-step="5"
+            data-slider-value="20"
+            style="width: 60%;"
+          ></p>
+          <p>Cornering:  
+            <input
+            id="angular_slider"
+            type="text"
+            data-provide="slider"
+            data-slider-min="50"
+            data-slider-max="140"
+            data-slider-step="10"
+            data-slider-value="100"
+            style="width: 60%;"
+          ></p>
+          <p>Control Mode:
+            <input type="radio" id="drive_control_raw" name="control_mode" />
+            <label for="drive_control_raw" >raw</label>
+      
+            <input type="radio" id="drive_control_pid" name="control_mode"  checked="checked"/>
+            <label for="drive_control_pid">pid</label>
+      
+            <input type="radio" id="drive_control_st" name="control_mode" />
+            <label for="drive_control_st" >st</label>
+          </p>
+          <p>Autonomous Mode:
+            <input type="radio" id="autonomous_mode_on" name="autonomous_mode" />
+            <label for="drive_control_raw" >on</label>
+      
+            <input type="radio" id="autonomous_mode_off" name="autonomous_mode" checked="checked"/>
+            <label for="drive_control_pid">off</label>
+          </p>
+        </div>
+        <div class="col-lg-2" style="line-height: 1;">
+          <h4>Arm</h4>
+          <p>Velocity: 
+            <input
+            id="arm_slider"
+            type="text"
+            data-provide="slider"
+            data-slider-min="5"
+            data-slider-max="75"
+            data-slider-step="5"
+            data-slider-value="35"
+            style="width: 60%;"
+          ></p>
+          <p>Power Saving:
+            <input type="radio" id="arm_ps_all" name="power_saving" />
+            <label for="arm_ps_all" >all</label>
+
+            <input type="radio" id="arm_ps_non_backdriveable" name="power_saving" checked="checked"/>
+            <label for="arm_ps_on_backdriveable" >safe</label>
+
+            <input type="radio" id="arm_ps_off" name="power_saving"  />
+            <label for="arm_ps_off">off</label>
+          </p>
+        </div>
+        <div class="col-lg-1" style="line-height: 1;">
+          <h4>Batteries</h4>
+          <p>
+            1: <span id="bat1_dot" style="font-size: 1.5em; margin-right: 5px;">●</span> <span id="bat1_volt"></span> V<br/>
+            2: <span id="bat2_dot" style="font-size: 1.5em; margin-right: 5px;">●</span> <span id="bat2_volt"></span> V<br/>
+            3: <span id="bat3_dot" style="font-size: 1.5em; margin-right: 5px;">●</span> <span id="bat3_volt"></span> V<br/>
+            4: <span id="bat4_dot" style="font-size: 1.5em; margin-right: 5px;">●</span> <span id="bat4_volt"></span> V<br/>
+          </p>
+        </div>
+        <div class="col-lg-1" style="line-height: 1;">
+          <h4>Boards</h4>
+          <p>
+            1: <span id="board1_dot" style="font-size: 1.5em; margin-right: 5px;">●</span>
+              <button id="board1_btn" onclick="toggleBoard(1)" style="width: 40px; background-color: red; color: white;">OFF</button><br/>
+
+            2: <span id="board2_dot" style="font-size: 1.5em; margin-right: 5px;">●</span>
+              <button id="board2_btn" onclick="toggleBoard(2)" style="width: 40px; background-color: red; color: white;">OFF</button><br/>
+
+            3: <span id="board3_dot" style="font-size: 1.5em; margin-right: 5px;">●</span>
+              <button id="board3_btn" onclick="toggleBoard(3)" style="width: 40px; background-color: red; color: white;">OFF</button><br/>
+
+            4: <span id="board4_dot" style="font-size: 1.5em; margin-right: 5px;">●</span>
+              <button id="board4_btn" onclick="toggleBoard(4)" style="width: 40px; background-color: red; color: white;">OFF</button><br/>
+
+            5: <span id="board5_dot" style="font-size: 1.5em; margin-right: 5px;">●</span>
+              <button id="board5_btn" onclick="toggleBoard(5)" style="width: 40px; background-color: red; color: white;">OFF</button><br/>
+              <button id="board_apply_btn" onclick="power_commands_publisher()" style="width: 80px;">Apply</button><br/>
+          </p>
+        </div>
+        <div class="col-lg-1" style="line-height: 1;">
+          <h4>Lights</h4>
+          <div class="=row">
+            <input type="radio" id="spotlight_on" name="spotlight" />
+            <label for="spotlight_on" >on</label>
+
+            <input type="radio" id="spotlight_off" name="spotlight" checked="checked"/>
+            <label for="spotlight_off" >off</label>
+          </div>
+        </div>
+        <div class="col-lg-1" style="line-height: 1;">
+            <h4>Positioning</h4>
+            <table>
+              <tr><td>lat:</td>  <td id="latitude"></td></tr>
+              <tr><td>lon:</td>  <td id="longitude"></td></tr>
+              <tr><td>alt:</td>  <td id="altitude"></td></tr>
+              <tr><td>head:</td> <td><span id="heading"></span>°</td></tr>
+            </table>
+            <h6>Target</h6>
+            <table>
+              <tr>
+                <td>lat:</td>
+                <td><input type="number" id="target_lat" step="any" style="width: 100px;"></td>
+              </tr>
+              <tr>
+                <td>lon:</td>
+                <td><input type="number" id="target_lon" step="any" style="width: 100px;"></td>
+              </tr>
+              <tr>
+                <td>head:</td>
+                <td><span id="desired_heading">--</span>°</td>
+              </tr>
+            </table>
+        </div>
+        <div class="col-lg-2" style="line-height: 1;">
+          <h4>Gas Sensors</h4>
+          <table id="gas_table">
+            <!-- RowSs will be added here dynamically -->
+          </table>
+        </div>
+    </div>
+      <div class="row">
+        <h4>Jetson Terminal</h4>
+          <textarea id="terminal_output" rows="10" style="width: 100%; background:black; color:lime; font-family: monospace;" readonly></textarea>
+          <input id="terminal_input" type="text" style="width: 100%;" placeholder="Type a command and press Enter">
+      </div>
+  </div>
+</main>
+
+<script src="./static/js/jquery-3.5.1.min.js" ></script>
+<script src="./static/js/bootstrap/bootstrap.bundle.js"></script>
+<script src="./static/js/bootstrap/bootstrap-slider.min.js"></script>
+<script src="./static/js/eventemitter2.min.js"></script>
+<script src="./static/js/roslib.min.js"></script>
+<script src="./static/js/keyboardteleop.js"></script>
+
+<script>
+  $(document).ready(function(){
+    $("input[name='del']").each(function( index ) {
+      $(this).on("click", function(){
+        $(this).closest("div").find("img").attr("src","");
+        $(this).closest("div").remove();
+      })
+    });
+    document.getElementById("target_lat").addEventListener("input", updateDesiredHeading);
+    document.getElementById("target_lon").addEventListener("input", updateDesiredHeading);
+  });
+
+
+
+
+    var bat1_volt = 0, bat1_curr = 0;
+    var bat2_volt = 0, bat2_curr = 0;
+    var bat3_volt = 0, bat3_curr = 0;
+    var lin_vel_mult = 1;
+    var ang_vel_mult = 1; 
+    var drive_control_mode = 1, drive_power_saving = 0, drive_hearbeat = 1, drive_autonomous_mode = 0;
+    var arm_control_mode = 1, arm_power_saving = 1, arm_hearbeat = 1;
+    var spotlight = 0, ledstrip = 0;
+
+    var power_init_flag = [0,0,0,0,0]
+    var power_commands_array = [0.0, 0.0, 0.0, 0.0, 0.0]
+
+    var joint_multipliers = [2, 1, 1, 4.68, 4.68, 4.68, 1]
+    var arm_direction = [1,-1,-1,1,-1,1,1]
+
+    const trackedKeys = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 
+      'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 
+      'Numpad1', 'Numpad2','Numpad3','Numpad4','Numpad5','Numpad6',
+      'Numpad7','Numpad9','NumpadAdd','NumpadSubtract','NumpadMultiply','NumpadDivide',
+      'Numpad0','NumpadEnter',
+      'ShiftLeft', 'CapsLock'
+    ];
+
+    const keyStatus = {};
+    trackedKeys.forEach(key => keyStatus[key] = 0);
+
+    // Connecting to ROS.
+    var ros = new ROSLIB.Ros({
+        url : 'ws://{{ros_host}}:9090'
+    });
+
+    // drivetrain
+    var cmd_vel = new ROSLIB.Topic({
+        ros : ros,
+        name : '/cmd_vel',
+        messageType : 'geometry_msgs/msg/Twist'
+    });
+    var drivetrain_config = new ROSLIB.Topic({
+        ros : ros,
+        name : '/wheel_settings',
+        messageType : 'sensor_msgs/msg/JointState'
+    });
+
+    // arm
+    var arm_commands = new ROSLIB.Topic({
+        ros : ros,
+        name : '/arm_commands',
+        messageType : 'sensor_msgs/msg/JointState'
+    });
+    var arm_settings = new ROSLIB.Topic({
+        ros : ros,
+        name : '/arm_settings',
+        messageType : 'sensor_msgs/msg/JointState'
+    });
+    //light
+    var light_comamnds = new ROSLIB.Topic({
+        ros : ros,
+        name : '/light_commands',
+        messageType : 'sensor_msgs/msg/JointState'
+    });
+    //power
+    var power_commands = new ROSLIB.Topic({
+        ros : ros,
+        name : '/power_commands',
+        messageType : 'sensor_msgs/msg/JointState'
+    });
+
+
+    
+
+    var linear_slider = document.getElementById("linear_slider");
+    
+    var angular_slider = document.getElementById("angular_slider");
+
+    var bat1_listener = new ROSLIB.Topic({
+      ros : ros,
+      name : '/bat1',
+      messageType : 'sensor_msgs/msg/BatteryState'
+    });  
+    var bat2_listener = new ROSLIB.Topic({
+      ros : ros,
+      name : '/bat2',
+      messageType : 'sensor_msgs/msg/BatteryState'
+    });   
+    var bat3_listener = new ROSLIB.Topic({
+      ros : ros,
+      name : '/bat3',
+      messageType : 'sensor_msgs/msg/BatteryState'
+    });    
+    var bat4_listener = new ROSLIB.Topic({
+      ros : ros,
+      name : '/bat4',
+      messageType : 'sensor_msgs/msg/BatteryState'
+    });   
+    var gps_listener = new ROSLIB.Topic({
+      ros : ros,
+      name : '/gps/fix',
+      messageType : 'sensor_msgs/msg/NavSatFix'
+    }); 
+    var compass_listener = new ROSLIB.Topic({
+      ros : ros,
+      name : '/compass',
+      messageType : 'sensor_msgs/msg/Imu'
+    });
+    var power_listener = new ROSLIB.Topic({
+      ros : ros,
+      name : '/power_states',
+      messageType : 'sensor_msgs/msg/JointState'
+    }); 
+    const gas_listener = new ROSLIB.Topic({
+      ros: ros,
+      name: '/gas',
+      messageType: 'sensor_msgs/msg/JointState'
+    });
+
+    
+
+    function toggleBoard(boardNum) {
+      const btn = document.getElementById(`board${boardNum}_btn`);
+      const dot = document.getElementById(`board${boardNum}_dot`);
+      console.log(boardNum)
+      const isOn = btn.innerText === 'ON';
+
+      if (isOn) {
+        btn.innerText = 'OFF';
+        btn.style.backgroundColor = 'red';
+        btn.style.color = 'white';
+        power_commands_array[boardNum - 1] = 0.0;
+      } else {
+        btn.innerText = 'ON';
+        btn.style.backgroundColor = 'green';
+        btn.style.color = 'white';
+        power_commands_array[boardNum - 1] = 1.0;
+      }
+    }
+
+
+    function formatVoltage(voltage) {
+      let v = Number(voltage).toFixed(2); // e.g., "4.00"
+      let [intPart, decPart] = v.split(".");
+      intPart = intPart.padStart(2, '0'); // forces "04" for example
+      return `${intPart}.${decPart}`;
+    }
+
+    function updateBatteryDisplay(batId, voltage, status) {
+      document.getElementById(batId + '_volt').innerHTML = formatVoltage(voltage)
+
+      const dot = document.getElementById(batId + '_dot');
+      if (status === 2) {
+        dot.style.color = 'green';
+      } else if (status === 1) {
+        dot.style.color = 'gold';
+      } else {
+        dot.style.color = 'red';
+      }
+    }
+    
+    bat1_listener.subscribe(function(message) {
+      updateBatteryDisplay('bat1', message.voltage, message.power_supply_status);
+    });
+    bat2_listener.subscribe(function(message) {
+      updateBatteryDisplay('bat2', message.voltage, message.power_supply_status);
+    });
+    bat3_listener.subscribe(function(message) {
+      updateBatteryDisplay('bat3', message.voltage, message.power_supply_status);
+    });
+    bat4_listener.subscribe(function(message) {
+      updateBatteryDisplay('bat4', message.voltage, message.power_supply_status);
+    });
+
+
+
+    gps_listener.subscribe(function(message) {
+      const latitude = message.latitude.toFixed(6);
+      const longitude = message.longitude.toFixed(6);
+      const altitude = message.altitude.toFixed(1);
+
+      document.getElementById('latitude').innerHTML = latitude;
+      document.getElementById('longitude').innerHTML = longitude;
+      document.getElementById('altitude').innerHTML = altitude;
+
+      updateDesiredHeading();  // Call the function to recalculate desired heading
+    });
+
+    compass_listener.subscribe(function(message) {
+      heading = message.angular_velocity.z
+      heading = (-heading / 3.14 * 180 + 90 + 360) % 360
+      document.getElementById('heading').innerHTML=heading.toFixed(1)
+    });
+
+    function computeBearing(lat1, lon1, lat2, lon2) {
+      const toRad = deg => deg * Math.PI / 180;
+      const toDeg = rad => rad * 180 / Math.PI;
+
+      const φ1 = toRad(lat1);
+      const φ2 = toRad(lat2);
+      const Δλ = toRad(lon2 - lon1);
+
+      const y = Math.sin(Δλ) * Math.cos(φ2);
+      const x = Math.cos(φ1)*Math.sin(φ2) -
+                Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+
+      let θ = Math.atan2(y, x);  // in radians
+      let bearing = (toDeg(θ) + 360) % 360;  // normalize to [0,360)
+      return bearing;
+    }
+
+    function updateDesiredHeading() {
+      const latText = document.getElementById("latitude").innerText;
+      const lonText = document.getElementById("longitude").innerText;
+      const targetLat = parseFloat(document.getElementById("target_lat").value);
+      const targetLon = parseFloat(document.getElementById("target_lon").value);
+
+      const currLat = parseFloat(latText);
+      const currLon = parseFloat(lonText);
+
+      if (isNaN(currLat) || isNaN(currLon) || isNaN(targetLat) || isNaN(targetLon)) {
+          document.getElementById("desired_heading").innerText = "--";
+          return;
+      }
+
+      const desired = computeBearing(currLat, currLon, targetLat, targetLon);
+      document.getElementById("desired_heading").innerText = desired.toFixed(1);
+    }
+
+
+    power_listener.subscribe(function(message){
+      console.log("power received!")
+      for(let c = 1; c < 6; c += 1){
+        var dot = document.getElementById(`board${c}_dot`);
+        var btn = document.getElementById(`board${c}_btn`);
+        if(message.position[c - 1] < 0.5){
+          dot.style.color = 'red'
+          if(power_init_flag[c - 1] <= 0){
+            console.log("initializing button!")
+            btn.innerText = 'OFF';
+            btn.style.backgroundColor = 'red';
+            btn.style.color = 'white';
+            power_commands_array[c - 1] = 0.0;
+            power_init_flag[c - 1] = 1
+          }
+        }
+        else{
+          dot.style.color = 'green'
+          if(power_init_flag[c - 1] <= 0){
+            console.log("initializing button!")
+            btn.innerText = 'ON';
+            btn.style.backgroundColor = 'green';
+            btn.style.color = 'white';
+            power_commands_array[c - 1] = 1.0;
+            power_init_flag[c - 1] = 1
+          }
+        }
+      }
+    });
+
+    gas_listener.subscribe(function(message) {
+      const table = document.getElementById('gas_table');
+
+      // Clear old rows
+      table.innerHTML = '';
+
+      for (let i = 0; i < message.name.length; i++) {
+        const name = message.name[i];
+        const percent = (message.position[i]).toFixed(1) + '%';
+
+        const row = document.createElement('tr');
+        const labelCell = document.createElement('td');
+        const valueCell = document.createElement('td');
+
+        labelCell.textContent = name + ':';
+        valueCell.textContent = percent;
+
+        row.appendChild(labelCell);
+        row.appendChild(valueCell);
+        table.appendChild(row);
+      }
+    });
+
+    
+
+    document.addEventListener('keydown', function(event) {
+      const target = event.target;
+      const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+      if (!isTyping && trackedKeys.includes(event.code)) {
+        event.preventDefault();
+        keyStatus[event.code] = 1;
+      }
+    });
+
+    document.addEventListener('keyup', function(event) {
+      const target = event.target;
+      const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+      if (!isTyping && trackedKeys.includes(event.code)) {
+        keyStatus[event.code] = 0;
+      }
+    });
+
+
+
+
+    function cmd_vel_pub() {
+      var v_lin = 0, v_ang = 0;
+      lin_vel_mult = parseFloat(linear_slider.value / 100.0)
+      ang_vel_mult = parseFloat(angular_slider.value / 100.0)
+      if(keyStatus['KeyQ'] == 0 && keyStatus['KeyE'] == 0){
+        v_lin = (keyStatus['KeyW'] - keyStatus['KeyS']) * lin_vel_mult 
+        v_ang = (keyStatus['KeyA'] - keyStatus['KeyD']) * ang_vel_mult
+        strafe = (keyStatus['ArrowRight'] - keyStatus['ArrowLeft']) * 90.0
+      }
+      else{
+        v_lin = (keyStatus['KeyQ'] - keyStatus['KeyE']) * lin_vel_mult * keyStatus['KeyW'] /2
+        v_ang = 100
+      }
+      if(keyStatus['ShiftLeft'] > 0){
+        v_lin *= 2
+      }
+      if(keyStatus['CapsLock'] > 0){
+        v_lin /= 2
+      }
+      if(keyStatus['ArrowUp'] > 0){
+        strafe /= 2
+      }
+      var twist = new ROSLIB.Message({
+        linear : {
+          x : v_lin ,
+          y : strafe,
+          z : 0
+        },
+        angular : {
+          x : 0,
+          y : 0,
+          z : v_ang 
+        }
+      });
+      if(drive_autonomous_mode == 0){
+        cmd_vel.publish(twist);
+      }
+    }
+
+    function drivetrain_config_publisher(){
+      var jointstate = new ROSLIB.Message({
+        name : ['control_mode', 'power_saving', 'heartbeat', 'autonomous_mode'],
+        position : [drive_control_mode, drive_power_saving, drive_hearbeat, 0.0],
+        velocity : [0.0, 0.0, 0.0],
+        effort : [0.0, 0.0, 0.0]
+      });
+      drivetrain_config.publish(jointstate);
+    }
+
+    function arm_commands_pub() {
+    //  console.log(keyStatus)
+      var velocity = [
+        keyStatus['Numpad0'] - keyStatus['NumpadEnter'],
+        keyStatus['Numpad1'] - keyStatus['Numpad4'],
+        keyStatus['Numpad2'] - keyStatus['Numpad5'],
+        keyStatus['Numpad3'] - keyStatus['Numpad6'],
+        keyStatus['Numpad7'] - keyStatus['Numpad9'],
+        keyStatus['NumpadDivide'] - keyStatus['NumpadMultiply'],
+        keyStatus['NumpadAdd'] - keyStatus['NumpadSubtract']];
+      for(let c = 0; c < 6; c += 1){
+        velocity[c] *= arm_slider.value *joint_multipliers[c]* arm_direction[c] / 10.0;
+        if(keyStatus['ShiftLeft'] > 0){
+          velocity[c] *= 2
+        }
+        if(keyStatus['CapsLock'] > 0){
+          velocity[c] /= 2
+        }
+      }
+      velocity[6] *=  arm_direction[6];
+      if(velocity[6] > 0){
+        velocity[6] *= 0.8
+      }
+      var jointstate = new ROSLIB.Message({
+        name : ["Rotational0", "Rotational1", "Rotational2", "Rotational3", "Rotational4", "Rotational5", "Slider0"],
+        position : [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        velocity: velocity,
+        effort: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      });
+  //    console.log(velocity);
+      arm_commands.publish(jointstate);
+    }
+
+    function arm_settings_publisher(){
+      var jointstate = new ROSLIB.Message({
+        name : ['control_mode', 'power_saving', 'heartbeat'],
+        position : [arm_control_mode, arm_power_saving, arm_hearbeat],
+        velocity : [0.0, 0.0, 0.0],
+        effort : [0.0, 0.0, 0.0]
+      });
+      arm_settings.publish(jointstate);
+    }
+
+    function light_comands_publisher(){
+      var jointstate = new ROSLIB.Message({
+        name : ['spotlight', 'ledstrip'],
+        position : [spotlight, ledstrip],
+        velocity : [0.0, 0.0],
+        effort : [0.0, 0.0]
+      });
+      light_comamnds.publish(jointstate);
+    }
+
+    function power_commands_publisher(){
+      var jointstate = new ROSLIB.Message({
+        name : ['board1', 'board2', 'board3', 'board4', 'board5'],
+        position : power_commands_array,
+        velocity : [],
+        effort : []
+      });
+      power_commands.publish(jointstate)
+    }
+
+    function checkCheckbox() {
+      if(document.getElementById('drive_control_raw').checked){
+        drive_control_mode = 0
+      }
+      if(document.getElementById('drive_control_pid').checked){
+        drive_control_mode = 1
+      }
+      if(document.getElementById('drive_control_st').checked){
+        drive_control_mode = 2
+      }
+
+      if(document.getElementById('autonomous_mode_off').checked){
+        drive_autonomous_mode = 0
+      }
+      if(document.getElementById('autonomous_mode_on').checked){
+        drive_autonomous_mode = 1
+      }
+
+      if(document.getElementById('arm_ps_off').checked){
+        arm_power_saving = 0
+      }
+      if(document.getElementById('arm_ps_non_backdriveable').checked){
+        arm_power_saving = 1
+      }
+      if(document.getElementById('arm_ps_all').checked){
+        arm_power_saving = 2
+      }
+
+
+      if(document.getElementById('spotlight_off').checked){
+        spotlight = 0
+      }
+      if(document.getElementById('spotlight_on').checked){
+        spotlight = 1
+      }
+
+    }
+
+    var interval_checkbox = setInterval(checkCheckbox, 50);
+
+    var interval_cmd_vel = setInterval(cmd_vel_pub, 50);
+    var interval_drive_config = setInterval(drivetrain_config_publisher, 200);
+
+    var interval_arm = setInterval(arm_commands_pub, 50);
+    var interval_arm_config = setInterval(arm_settings_publisher, 500);
+
+    var interval_light = setInterval(light_comands_publisher, 200);
+
+
+    document.getElementById('terminal_input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const command = this.value;
+        this.value = '';
+
+        fetch('/run_cmd', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ cmd: command })
+        })
+        .then(response => response.json())
+        .then(data => {
+          const output = document.getElementById('terminal_output');
+          output.value += `> ${command}\n${data.output}\n`;
+          output.scrollTop = output.scrollHeight;
+        })
+        .catch(err => {
+          alert('Command failed: ' + err);
+        });
+      }
+});
+
+    
+
+let currentCam = "ircam"; // start with ircam
+
+  document.getElementById("toggleCamera").addEventListener("click", function() {
+    // Toggle camera
+    currentCam = (currentCam === "ircam") ? "hazcam" : "ircam";
+
+    // Update image source
+    document.getElementById("cameraStream").src =
+      `http://{{ros_host}}:9999/stream?topic=/${currentCam}/image_raw&type=mjpeg&default_transport=compressed&quality=20`;
+
+    // Update button text to show the *next* camera
+    this.textContent = (currentCam === "ircam") ? "hazcam" : "ircam";
+  });
+
+</script>
+</html>
