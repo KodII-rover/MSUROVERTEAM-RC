@@ -18,7 +18,7 @@
 colcon build --symlink-install --packages-select turtlebro_web
 
 # Запуск Web-сервера через launch
-`ros2 launch turtlebro_web web_server.xml
+ros2 launch turtlebro_web web_server.xml
 
 # Подготовка зависимостей
 rosdep install -i --from-path src --rosdistro humble -y
