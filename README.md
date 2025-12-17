@@ -14,17 +14,11 @@
 
 ## Сборка и запуск Web-интерфейса
 ```bash																																																										
-# Связь с веб-интерфейсом. Запуск через Flask для отладки.
-flask --app turtlebro_web.web_server --debug run --host=0.0.0.0 --port=8080 ros2 run rosbridge_server rosbridge_websocket
-
 # Сборка пакета
-colcon build --symlink-install --packages-select=turtlebro_web
+colcon build --symlink-install --packages-select turtlebro_web
 
-# Запуск Web-сервера
-`ros2 run turtlebro_web web_server
-
-# Прямой запуск Python-скрипта
-`python3 turtlebro_web/web_server.py
+# Запуск Web-сервера через launch
+`ros2 launch turtlebro_web web_server.xml
 
 # Подготовка зависимостей
 rosdep install -i --from-path src --rosdistro humble -y
