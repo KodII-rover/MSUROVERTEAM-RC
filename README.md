@@ -12,6 +12,16 @@
 
 За основу при разработке ПО дистанционного управления была взята бета-версия пакета [turtlebro_web](https://github.com/voltbro/turtlebro_web), разработанная нашими коллегами из НИИ Механики МГУ на основе стандартной ROS2 библиотеки roslibjs.
 
+## Лицензирование (License)
+
+Данное программное обеспечение распростроняется на условиях двойного лицензирования (This software is dual-licensed):
+
+- MIT License (see [LICENSE](https://github.com/KodII-rover/MSUROVERTEAM-RC/blob/main/LICENSE))
+- Открытая простая лицензия (Russian Open License) (see [GENERAL_LICENSE-RF-RC.md](https://github.com/KodII-rover/MSUROVERTEAM-RC/blob/main/GENERAL_LICENSE-RF-RC.md))
+
+Вы можете использовать этот проект на условиях любой из лицензий (You may use this project under the terms of either license).
+
+
 ## Сборка и запуск Web-интерфейса
 ```bash																																																										
 # Сборка пакета
