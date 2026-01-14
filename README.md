@@ -14,7 +14,7 @@
 
 ## Лицензирование (License)
 
-Данное программное обеспечение распростроняется на условиях двойного лицензирования (This software is dual-licensed):
+Данный Программный продукт распространяется на условиях двойного лицензирования: (This software is dual-licensed):
 
 - MIT License (see [LICENSE](https://github.com/KodII-rover/MSUROVERTEAM-RC/blob/main/LICENSE))
 - Открытая простая лицензия (Russian Open License) (see [GENERAL_LICENSE-RF-RC.md](https://github.com/KodII-rover/MSUROVERTEAM-RC/blob/main/GENERAL_LICENSE-RF-RC.md))
