@@ -41,7 +41,7 @@
     * [7. КЛАСС Navigation](#7-класс-navigation)
     * [8. ФУНКЦИЯ move_to()](#8-функция-move_to)
     * [9. ФУНКЦИЯ setup()](#9-функция-setup)
-* [Интеграция с модулем управления движением ровера](#интеграция-с-модулем-управление-движением-ровера-на-низком-уровне)
+* [Интеграция с модулем управления движением ровера](#интеграция-с-модулем-управления-движением-ровера-на-низком-уровне)
 * [Настройка ROS2 Humble](#настройка-ros2-humble-для-работы-библиотеки)
 * [Настройка параметров навигации и локализации](#настройка-параметров-навигации-и-локализации)
     * [1. Настройка Nav2](#1-настройка-nav2)
@@ -61,13 +61,13 @@
 
 «Открытая библиотека автономной навигации по распознанным указателям движения» предназначена для автоматического определения текущей позиции ровера (2D локализация), для построения карты местности в режиме реального времени (картирование), для построения маршрута ровера с учетом рельефа местности и возможностью работы без использования глобальных систем спутникового позиционирования (навигации), а также для управления движением ровера с помощью алгоритмов SLAM (Simultanious Localization and Mapping) в реальных условиях по умеренно пересеченной местности. Метод одновременной навигации, построения карты и движения увязывает независимые процессы в непрерывный цикл последовательных вычислений, при этом результаты одного процесса участвуют в вычислениях другого процесса. Это позволяет добиться полной автономности в движении ровера по незнакомой местности.
 
-**МИНИМАЛЬНЫЕ ТЕХНИЧЕСКИЕ ТРЕБОВАНИЯ:**
+**МИНИМАЛЬНЫЙ ТЕХНИЧЕСКИЕ ТРЕБОВАНИЯ:**
 
 - Операционная система: Ubuntu 22.04,
 - Процессор: AMD Ryzen R7 6800U,
 - ОЗУ: 16Гб,
 - Объем диска: 16 Гб,
-- Наличие камеры глубины (Intel RealSense D435i или аналогичной),
+- Наличие камеры глубины,
 - Наличие IMU WITMOTION WT901BLECL BLE5.0,
 - Наличие колесной базы с энкодерами на моторах.
 
@@ -88,8 +88,6 @@
 - controller-interface,
 - generate-parameter-library,
 - ackermann-msgs,
-- realsense2_camera,
-- eureka_camera_2,
 - ROS2 (интеграция с роботом).
 
 **СПИСОК ОБЪЕКТОВ ДЛЯ ДОКУМЕНТИРОВАНИЯ.**
@@ -296,7 +294,7 @@
 
 ROS2 Humble:
 
-```bash
+```
 # Проверяем, что в системе используется UTF-8
 locale  
 
@@ -307,3 +305,674 @@ export LANG=en_US.UTF-8
 
 # Проверяем, что в системе применилась UTF-8
 locale
+```
+
+```
+# Подключаем репозиторий universe, необходимый для пакетов
+sudo apt install software-properties-common
+sudo add-apt-repository universe
+```
+
+```
+# Устанавливаем curl и добавляем официальный APT-источник ROS 2
+sudo apt update && sudo apt install curl -y
+export ROS_APT_SOURCE_VERSION=$(curl -s https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest | grep -F "tag_name" | awk -F'"' '{print $4}')
+curl -L -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo ${UBUNTU_CODENAME:-${VERSION_CODENAME}})_all.deb"
+sudo dpkg -i /tmp/ros2-apt-source.deb
+```
+
+```
+# Обновляем список пакетов после добавления репозитория ROS 2
+sudo apt update
+```
+
+```
+# Обновляем установленные пакеты системы до актуальных версий
+sudo apt upgrade
+```
+
+```
+# Устанавливаем полную desktop-версию ROS 2 Humble
+sudo apt install ros-humble-desktop
+```
+
+```
+# Устанавливаем инструменты разработчика для ROS 2
+sudo apt install ros-dev-tools
+```
+
+robot_localization:
+
+```
+# Устанавливаем пакет robot_localization для модуля локализации
+sudo apt install ros-humble-robot-localization 
+```
+
+Nav2:
+
+```
+# Устанавливаем Nav2 для модуля навигации
+sudo apt install ros-humble-navigation2
+sudo apt install ros-humble-nav2-bringup
+```
+
+Rtabmap:
+
+```
+# Устанавливаем RTAB-Map для модуля маппинга
+sudo apt install ros-humble-rtabmap-ros
+```
+
+BehaviorTree.CPP:
+
+```
+# Устанавливаем библиотеку BehaviorTree.CPP v3
+sudo apt install ros-humble-behaviortree-cpp-v3
+```
+
+```
+# Устанавливаем дополнительные зависимости для сборки
+sudo apt install ros-humble-realtime-tools
+sudo apt install ros-humble-backward-ros
+sudo apt install ros-humble-controller-interface
+sudo apt install ros-humble-generate-parameter-library
+sudo apt install ros-humble-ackermann-msgs
+```
+
+
+**Сборка библиотеки MSUROVERTEAM-SLAM.**
+
+создадим папку нашего рабочего пространства ros2_ws и папку src внутри папки рабочего пространства ros2_ws:
+
+```
+cd ~/
+mkdir ros2_ws
+cd ros2_ws
+mkdir src
+```
+
+Переходим в папку src нашего рабочего пространства:
+
+```
+cd ~/ros2_ws/src
+```
+
+Клонируем репозиторий библиотеки в папку src:
+
+```
+git clone https://github.com/KodII-rover/MSUROVERTEAM-SLAM.git
+```
+
+Возвращаемся в корневой каталог рабочего пространства:
+
+```
+cd ~/ros2_ws
+```
+
+Перед сборкой необходимо выйти из всех активных виртуальных окружений Python. Использование `colcon build` внутри `venv`, `virtualenv` или Conda может привести к тому, что `ament_cmake` будет использовать Python из виртуального окружения, в котором отсутствует модуль `catkin_pkg`.
+
+Если используется `venv` или `virtualenv`, выполните:
+
+```
+deactivate
+```
+
+Если используется Conda, выполните:
+
+```
+conda deactivate
+```
+
+Проверьте используемый интерпретатор:
+
+```
+which python3
+```
+
+При стандартной системной конфигурации команда должна вывести:
+
+```
+/usr/bin/python3
+```
+
+Проверить наличие модуля `catkin_pkg` можно командой:
+
+```
+python3 -c "import catkin_pkg; print(catkin_pkg.__file__)"
+```
+
+Если модуль отсутствует, установите его:
+
+```
+sudo apt install python3-catkin-pkg
+```
+
+После неудачной сборки необходимо удалить ранее созданные каталоги `build`, `install` и `log`, поскольку в них может быть сохранён путь к интерпретатору из виртуального окружения:
+
+```
+cd ~/ros2_ws
+rm -rf build/ install/ log/
+```
+
+Подключите системное окружение ROS 2 Humble и выполните сборку:
+
+```
+source /opt/ros/humble/setup.bash
+cd ~/ros2_ws
+colcon build
+```
+
+После успешной сборки подключите собранное рабочее пространство:
+
+```
+source ~/ros2_ws/install/setup.bash
+```
+
+Предупреждения компилятора могут носить информационный характер. Однако при наличии сообщений `FAILED`, `CMake Error`, `ModuleNotFoundError` или ненулевого кода завершения сборка не считается успешно выполненной.
+
+```
+cd ..
+```
+Обновляем переменные окружения:
+
+```
+source /opt/ros/humble/setup.bash
+cd ~/ros2_ws
+```
+
+Запускаем билд пакета нашей библиотеки:
+
+```
+colcon build
+```
+
+Во время сборки могут возникнуть предупреждения на терминале. Игнорируйте их.
+
+## **Настройка параметров навигации и локализации.**
+
+Перед запуском библиотеки необходимо привести параметры навигации, колёсной одометрии и EKF в соответствие с геометрией ровера, названиями ROS-топиков и установленными датчиками.
+
+Редактировать необходимо исходные конфигурационные файлы, расположенные в каталоге репозитория:
+
+```
+~/ros2_ws/src/MSUROVERTEAM-SLAM/
+```
+
+### **1\. Настройка Nav2**
+
+Файл:
+
+```
+eureka_navigation/config/nav2.yaml
+```
+
+Открыть файл можно командой:
+
+```
+nano ~/ros2_ws/src/MSUROVERTEAM-SLAM/eureka_navigation/config/nav2.yaml
+```
+
+Необходимо проверить следующие группы параметров:
+
+* `global_frame` — глобальная система координат. Для данной конфигурации используется `map`;
+* `robot_base_frame` — система координат основания ровера. Используется `base_footprint`;
+* `odom_topic` — топик отфильтрованной одометрии. Используется `/odometry/filtered`;
+* `controller_frequency` — частота работы локального контроллера в герцах;
+* `v_max` — максимальная линейная скорость ровера в метрах в секунду;
+* `xy_goal_tolerance` — допустимая ошибка достижения целевой позиции в метрах;
+* `yaw_goal_tolerance` — допустимая ошибка ориентации в радианах;
+* `footprint` — координаты контура ровера относительно `base_footprint`, задаваемые в метрах;
+* `width` и `height` — размеры локальной и глобальной карт стоимости в метрах;
+* `resolution` — размер одной ячейки карты стоимости в метрах;
+* `inflation_radius` — радиус расширения препятствий с учётом безопасного расстояния;
+* `minimum_turning_radius` — минимальный физически достижимый радиус поворота ровера;
+* `reverse_penalty`, `change_penalty` и `cost_penalty` — штрафы планировщика за движение задним ходом, изменение направления и приближение к препятствиям.
+
+Контур `footprint` должен соответствовать фактическим габаритам ровера. Значения максимальной скорости и минимального радиуса поворота должны быть определены экспериментально с учётом кинематики шасси.
+
+### **2\. Настройка колёсной одометрии**
+
+Файл параметров узла `eureka_odometry` в текущей структуре репозитория расположен по адресу:
+
+```
+eureka_localization/config/odometry.yaml
+```
+
+Открыть файл можно командой:
+
+```
+nano ~/ros2_ws/src/MSUROVERTEAM-SLAM/eureka_localization/config/odometry.yaml
+```
+
+Необходимо настроить следующие параметры:
+
+* `joint_sub_topic` — топик с положениями рулевых приводов и скоростями колёс, по умолчанию `/wheel_states`;
+* `imu_sub_topic` — топик IMU, по умолчанию `/imu/data`;
+* `wheel_radius` — фактический радиус колеса в метрах;
+* `wheel_base` — расстояние между передней и задней рулевыми осями в метрах;
+* `wheel_track` — расстояние между центрами левых и правых колёс в метрах;
+* `measure_error` — экспериментальный относительный коэффициент коррекции скорости. Значение `0.0` соответствует отсутствию коррекции;
+* `enable_odom_tf` — разрешение публикации TF колёсной одометрией.
+
+При использовании EKF параметр `enable_odom_tf` рекомендуется оставить равным `false`, поскольку трансформацию `odom → base_footprint` публикует узел `robot_localization`. Одновременная публикация одной TF-трансформации двумя узлами не допускается.
+
+### **3\. Настройка расширенного фильтра Калмана**
+
+Файл:
+
+```
+eureka_localization/config/ekf_el_classico.yaml
+```
+
+Открыть файл можно командой:
+
+```
+nano ~/ros2_ws/src/MSUROVERTEAM-SLAM/eureka_localization/config/ekf_el_classico.yaml
+```
+
+Необходимо проверить следующие параметры:
+
+* `frequency` — частота расчёта EKF в герцах;
+* `map_frame` — глобальная система координат `map`;
+* `odom_frame` — локальная система координат `odom`;
+* `base_link_frame` — система координат основания ровера `base_footprint`;
+* `world_frame` — система координат, относительно которой EKF формирует результат; в текущей конфигурации используется `odom`;
+* `odom0` — входной топик колёсной одометрии `/eureka_odometry/odometry`;
+* `imu0` — входной топик IMU `/imu/data`;
+* `publish_tf` — публикация трансформации `odom → base_footprint`;
+* `two_d_mode` — включение двумерной модели движения. Значение `true` применяется для плоской поверхности, `false` — если необходимо учитывать крен и тангаж;
+* `imu0_remove_gravitational_acceleration` — удаление гравитационной составляющей из линейного ускорения IMU.
+
+Массивы `odom0_config` и `imu0_config` определяют используемые компоненты измерений в следующем порядке:
+
+```
+[x, y, z,
+ roll, pitch, yaw,
+ vx, vy, vz,
+ vroll, vpitch, vyaw,
+ ax, ay, az]
+```
+
+Значение `true` включает соответствующую компоненту в EKF, значение `false` исключает её.
+
+### **4\. Повторная сборка и проверка топиков**
+
+Перед запуском необходимо проверить наличие входных топиков:
+
+```
+ros2 topic list | grep -E "wheel_states|imu"
+```
+
+После изменения конфигурационных файлов необходимо повторно собрать соответствующие пакеты:
+
+```
+cd ~/ros2_ws
+source /opt/ros/humble/setup.bash
+colcon build --packages-select eureka_navigation eureka_localization eureka_odometry
+source install/setup.bash
+```
+
+После запуска навигационного стека рекомендуется проверить работу локализации:
+
+```
+ros2 topic hz /odometry/filtered
+ros2 run tf2_ros tf2_echo odom base_footprint
+ros2 topic hz /map
+ros2 param dump /ekf_filter_node
+ros2 param dump /controller_server
+```
+
+Наличие сообщений в `/odometry/filtered`, карты `/map` и непрерывной трансформации `odom → base_footprint` свидетельствует о корректном запуске основных компонентов локализации и картирования.
+
+
+Перед запуском автономной навигации по распознанным указателям движения необходимо выполнить глобальный launch-файл, используя команду:
+
+```
+ros2 launch eureka_navigation nav2tune.launch.py
+```
+# **Примеры использования библиотеки.**
+
+## **Пример программного кода для автономного движения ровера по указателям движения (стрелкам) и по указателю конечной цели (конусу).**
+
+С++ код:
+
+``` cpp
+#include "eureka_nav_lib/eureka_nav_lib.hpp"
+#include <rclcpp/rclcpp.hpp>
+
+class SetupNode : public rclcpp::Node {
+public:
+    SetupNode() : Node("setup_node") {
+        // Инициализируем общую навигационную систему
+        nav = std::make_shared<eureka::Navigation>(shared_from_this());
+
+        // Запускаем функцию движения по стрелкам с остановкой в 10 секунд 
+        // у каждой стрелки и завершением движения возле конуса.
+        nav->setup();
+
+        // В данном примере просто выводим на консоль сообщение о завершении миссии.
+        RCLCPP_INFO(this->get_logger(), "Navigation system setup completed");
+    }
+
+private:
+    std::shared_ptr<eureka::Navigation> nav;
+};
+
+int main(int argc, char** argv) {
+    rclcpp::init(argc, argv);
+    auto node = std::make_shared<SetupNode>();
+    rclcpp::spin(node);
+    rclcpp::shutdown();
+    return 0;
+}
+```
+
+### **Пошаговая инструкция запуска примера.**
+
+1.  Открыть сессию в терминале и зайти в папку ros2_ws (рабочее пространство)
+2.  Запустите launch-файл общего стека навигации введя команду:
+
+```
+ros2 launch eureka_navigation nav2tune.launch.py
+```
+3.  Откройте новую сессию терминала и запустите launch-файл дерева поведения введя команду:
+
+```
+ros2 launch eureka_bt strategy.launch.py
+```
+4.  Для запуска примера вам также требуется создать пакет, для этого введите команду:
+
+```
+ros2 pkg create --build-type ament_cmake example
+```
+5.  Найдите в пакете файл CMakeLists.txt и введите следующее:
+
+```
+cmake_minimum_required(VERSION 3.16)
+project(example LANGUAGES CXX)
+if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
+add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# find dependencies
+set(THIS_PACKAGE_INCLUDE_DEPENDS
+eureka_nav_lib
+rclcpp
+rcpputils
+)
+
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+find_package(${Dependency} REQUIRED)
+endforeach()
+
+include_directories(include/)
+add_executable(${PROJECT_NAME}
+src/example.cpp
+)
+
+ament_target_dependencies(${PROJECT_NAME}
+eureka_nav_lib
+rclcpp
+rcpputils
+)
+
+# INSTALL
+install(TARGETS
+${PROJECT_NAME}
+DESTINATION lib/${PROJECT_NAME})
+								  
+ament_package()
+```
+6.  Зайдите в папку src пакета для запуска примера и создайте файл example.cpp введя команду:
+
+```
+touch example.cpp
+```
+
+7.  Вставьте код ниже в файл example.cpp:
+``` cpp
+
+#include "eureka_nav_lib/eureka_nav_lib.hpp"
+#include <rclcpp/rclcpp.hpp>
+
+class SetupNode : public rclcpp::Node {
+public:
+    SetupNode() : Node("setup_node") {
+        // Оставляем конструктор пустым или для простых инициализаций
+    }
+
+    void init() {
+        // Инициализируем навигацию здесь, когда shared_ptr уже создан
+        nav = std::make_shared<eureka::Navigation>(shared_from_this());
+
+        // Запуск настройки движения
+        nav->setup();
+
+        RCLCPP_INFO(this->get_logger(), "Navigation system setup completed");
+    }
+
+private:
+    std::shared_ptr<eureka::Navigation> nav;
+};
+
+int main(int argc, char** argv) {
+    rclcpp::init(argc, argv);
+    
+    auto node = std::make_shared<SetupNode>();
+    node->init(); // Безопасный вызов после создания shared_ptr
+    
+    rclcpp::spin(node);
+    rclcpp::shutdown();
+    return 0;
+}
+```
+
+8.  Вернитесь в директорию ros2_ws и соберите пакет введя команду:
+```
+colcon build --packages-select example
+```
+9.  Дальше введите команду ```source install/setup.bash``` для обновления файлов вашего рабочего пространства
+10.  Запустите пакет с примером введя команду:
+```
+ros2 run example example
+```
+## **Альтернативный пример программного кода для автономного движения ровера до целевых точек с указанием целевой позиции.**
+
+С++ код:
+``` cpp
+#include "eureka_nav_lib/eureka_nav_lib.hpp"
+#include <rclcpp/rclcpp.hpp>
+#include <chrono>
+#include <memory>
+
+class SimpleNavigation : public rclcpp::Node {
+public:
+    SimpleNavigation() : Node("simple_navigation") {
+        // We will initialize components in a separate method to ensure 
+        // the shared_ptr to 'this' is fully constructed.
+    }
+
+    void init() {
+        // Initialize navigation library classes
+        nav = std::make_shared<eureka::Navigation>(shared_from_this());
+        loc = std::make_shared<eureka::Calculate_localization>(shared_from_this());
+        map = std::make_shared<eureka::Construction_map>(shared_from_this());
+
+        // Define the sequence of goal points
+        // 45 seconds is an example interval between goals
+        timer_ = this->create_wall_timer(
+            std::chrono::seconds(45),
+            [this]() {
+                static int goal_num = 0;
+                send_goal(goal_num);
+                goal_num = (goal_num + 1) % 4;
+            }
+        );
+        
+        RCLCPP_INFO(this->get_logger(), "Navigation sequence started");
+    }
+
+private:
+    std::shared_ptr<eureka::Navigation> nav;
+    std::shared_ptr<eureka::Calculate_localization> loc;
+    std::shared_ptr<eureka::Construction_map> map;
+    rclcpp::TimerBase::SharedPtr timer_;
+
+    void send_goal(int goal_id) {
+        // Target positions: {x, y, yaw}
+        double goals[4][3] = {
+            {1.0, 0.0,  0.0},
+            {2.0, 1.0,  1.57},
+            {1.0, 2.0,  3.14},
+            {0.0, 1.0, -1.57}
+        };
+
+        RCLCPP_INFO(this->get_logger(), "Sending goal %d: x=%.2f, y=%.2f", 
+                    goal_id, goals[goal_id][0], goals[goal_id][1]);
+
+        // Trigger navigation to the target position
+        nav->move_to(goals[goal_id][0], goals[goal_id][1], goals[goal_id][2]);
+    }
+};
+
+int main(int argc, char** argv) {
+    rclcpp::init(argc, argv);
+    
+    auto node = std::make_shared<SimpleNavigation>();
+    node->init(); // Safe call after shared_ptr creation
+    
+    rclcpp::spin(node);
+    rclcpp::shutdown();
+    return 0;
+}
+```
+### **Пошаговая инструкция запуска альтернативного примера.**
+
+1.  Открыть сессию в терминале и зайти в папку ros2_ws (рабочее пространство)
+2.  Запустите launch-файл общего стека навигации введя команду:
+```
+ros2 launch eureka_navigation nav2tune.launch.py
+```
+3.  Для запуска примера вам также требуется создать пакет, для этого введите команду:
+```
+ros2 pkg create --build-type ament_cmake example
+```
+4.  Найдите в пакете файл CMakeLists.txt и введите следующее:
+```
+cmake_minimum_required(VERSION 3.16)
+project(example LANGUAGES CXX)
+if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
+add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# find dependencies
+set(THIS_PACKAGE_INCLUDE_DEPENDS
+eureka_nav_lib
+rclcpp
+rcpputils
+)
+
+foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
+find_package(${Dependency} REQUIRED)
+endforeach()
+
+include_directories(include/)
+add_executable(${PROJECT_NAME}
+src/example.cpp
+)
+
+ament_target_dependencies(${PROJECT_NAME}
+eureka_nav_lib
+rclcpp
+rcpputils
+)
+
+# INSTALL
+install(TARGETS
+${PROJECT_NAME}
+DESTINATION lib/${PROJECT_NAME})
+								  
+ament_package()
+```
+5.  Зайдите в папку src пакета для запуска примера и создайте файл example.cpp введя команду:
+```
+touch example.cpp
+```
+6.  Вставьте код ниже в файл example.cpp:
+``` cpp
+#include "eureka_nav_lib/eureka_nav_lib.hpp"
+#include <rclcpp/rclcpp.hpp>
+#include <chrono>
+#include <memory>
+
+// Пример реализации автономной навигации до целевой точки.
+class SimpleNavigation : public rclcpp::Node {
+public:
+    SimpleNavigation() : Node("simple_navigation") {
+        // Конструктор остается пустым для корректной работы shared_from_this()
+    }
+
+    void init() {
+        // Инициализируем компоненты библиотеки навигации
+        nav = std::make_shared<eureka::Navigation>(shared_from_this());
+        loc = std::make_shared<eureka::Calculate_localization>(shared_from_this());
+        map = std::make_shared<eureka::Construction_map>(shared_from_this());
+
+        // Определяем последовательность прохода ровером целевых точек
+        timer_ = this->create_wall_timer(
+            std::chrono::seconds(45), 
+            [this]() {
+                static int goal_num = 0;
+                send_goal(goal_num);
+                goal_num = (goal_num + 1) % 4;
+            }
+        );
+        
+        RCLCPP_INFO(this->get_logger(), "Система навигации инициализирована.");
+    }
+
+private:
+    std::shared_ptr<eureka::Navigation> nav;
+    std::shared_ptr<eureka::Calculate_localization> loc;
+    std::shared_ptr<eureka::Construction_map> map;
+    rclcpp::TimerBase::SharedPtr timer_;
+
+    void send_goal(int goal_id) {
+        double goals[4][3] = {
+            {1.0, 0.0, 0.0},
+            {2.0, 1.0, 1.57},
+            {1.0, 2.0, 3.14},
+            {0.0, 1.0, -1.57}
+        };
+
+        RCLCPP_INFO(this->get_logger(), "Едем к точке %d: x=%.2f, y=%.2f", 
+                    goal_id, goals[goal_id][0], goals[goal_id][1]);
+
+        // Вызываем функцию движения
+        nav->move_to(goals[goal_id][0], goals[goal_id][1], goals[goal_id][2]);
+    }
+};
+
+int main(int argc, char** argv) {
+    rclcpp::init(argc, argv);
+    
+    // Создаем узел через shared_ptr
+    auto node = std::make_shared<SimpleNavigation>();
+    
+    // Вызываем инициализацию ПОСЛЕ создания shared_ptr
+    node->init();
+    
+    rclcpp::spin(node);
+    rclcpp::shutdown();
+    return 0;
+}
+```
+7.  Вернитесь в директорию ros2_ws и соберите пакет введя команду:
+```
+colcon build --packages-select example
+```
+8.  Дальше введите команду ```source install/setup.bash``` для обновления файлов вашего рабочего пространства
+9.  Запустите пакет с примером введя команду:
+```
+ros2 run example example
+```
