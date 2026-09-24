@@ -494,7 +494,7 @@ rm -rf build/ install/ log/
 source /opt/ros/humble/setup.bash
 cd ~/ros2_ws
 
-# ДЛЯ ПРИМЕРА!!! Выполняем отдельную сборку пакета eureka_camera_2 для запуска камеру глубины RealSense
+# ДЛЯ ПРИМЕРА!!! Выполняем отдельную сборку пакета eureka_camera_2 для запуска камеры глубины RealSense
 colcon build --packages-select eureka_camera_2
 
 # Собираем все остальные пакеты рабочего пространства
